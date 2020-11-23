@@ -1,36 +1,34 @@
 import 'source-map-support/register'
 import * as middy from 'middy'
 import { cors } from 'middy/middlewares'
-import { createTodo } from "../../Logic/todos";
+import { getAllDiaries } from "../../Logic/diary";
 import { parseUserId } from '../../auth/utils';
 import { createLogger } from '../../utils/logger';
+
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
-import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
+const logger = createLogger('getDiary');
 
-const logger = createLogger('createTodo');
 
-export const handler= middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const newTodo: CreateTodoRequest = JSON.parse(event.body)
-  
-  // TODO: Implement creating a new TODO item
+export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  // TODO: Get all TODO items for a current user
+  console.log('Processing event: ', event)
   const authorization = event.headers.Authorization;
   const split = authorization.split(' ');
   const jwtToken = split[1];
   const userId = parseUserId(jwtToken);
-  const newItem = await createTodo(newTodo, userId);
-  logger.info(`create Todo for user ${userId} with data ${newTodo}`);
+console.log("userid : ",userId,"jwtToken : ",jwtToken);
+  const diaries = await getAllDiaries(userId);
+  logger.info(`get all diaries for user ${userId}`);
   return {
-    statusCode: 201,
+    statusCode: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Credentials': true
     },
     body: JSON.stringify({
-      item :{
-        ...newItem,
-      }
-    }),
+      items: diaries
+    })
 };
 })
 

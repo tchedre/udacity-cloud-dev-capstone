@@ -1,27 +1,24 @@
 import 'source-map-support/register'
 import * as middy from 'middy'
 import { cors } from 'middy/middlewares'
-import { updateTodo } from "../../Logic/todos";
+import { deleteDiary } from "../../Logic/diary";
 import { parseUserId } from '../../auth/utils';
 import { createLogger } from '../../utils/logger';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
-import { UpdateTodoRequest } from '../../requests/UpdateTodoRequest'
-
-const logger = createLogger('updateTodo');
-
+const logger = createLogger('deleteDiary');
 
 export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const todoId = event.pathParameters.todoId
-  const updatedTodo: UpdateTodoRequest = JSON.parse(event.body)
+  const diaryId = event.pathParameters.diaryId
 
-  // TODO: Update a TODO item with the provided id using values in the "updatedTodo" object
+  // TODO: Remove a TODO item by id
   const authorization = event.headers.Authorization;
   const split = authorization.split(' ');
   const jwtToken = split[1];
   const userId = parseUserId(jwtToken);
-  logger.info(`User ${userId} update todo ${todoId} with values ${updatedTodo}`)
-  await updateTodo(todoId, userId, updatedTodo);
+  logger.info(`User ${userId} deleting diary ${diaryId}`)
+  await deleteDiary(diaryId, userId);
+  
   return {
     statusCode: 204,
     headers: {

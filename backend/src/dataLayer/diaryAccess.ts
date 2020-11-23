@@ -1,30 +1,30 @@
 import * as AWS from 'aws-sdk';
 //import * as AWSXRay from 'aws-xray-sdk';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
-import { TodoItem } from "../models/TodoItem";
-import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
+import { DiaryItem } from "../models/DiaryItem";
+import { UpdateDiaryRequest } from '../requests/UpdateDiaryRequest'
 
 const AWSXRay = require('aws-xray-sdk');
 const XAWS = AWSXRay.captureAWS(AWS);
 
-export class TodosAccess {
+export class DiaryAccess {
   constructor(
       private readonly docClient: DocumentClient = new XAWS.DynamoDB.DocumentClient(),
-      private readonly todosTable = process.env.TODO_TABLE,
+      private readonly diaryTable = process.env.DIARY_TABLE,
       private readonly indexName = process.env.INDEX_NAME
   ) {}
 
-  async createTodo(todoItem: TodoItem): Promise<TodoItem> {
+  async createDiary(diaryItem: DiaryItem): Promise<DiaryItem> {
       await this.docClient.put({
-          TableName: this.todosTable,
-          Item: todoItem
+          TableName: this.diaryTable,
+          Item: diaryItem
       }).promise();
-      return todoItem;
+      return diaryItem;
   }
 
-  async getAllTodos(userId: string): Promise<TodoItem[]> {
+  async getAllDiaries(userId: string): Promise<DiaryItem[]> {
       const result = await this.docClient.query({
-          TableName: this.todosTable,
+          TableName: this.diaryTable,
           IndexName: this.indexName,
           KeyConditionExpression: 'userId = :userId',
           ExpressionAttributeValues: {
@@ -32,46 +32,45 @@ export class TodosAccess {
           }
       }).promise();
 
-      return result.Items as TodoItem[];
+      return result.Items as DiaryItem[];
   }
 
-  async getTodo(id: string): Promise<TodoItem>{
+  async getDiary(id: string): Promise<DiaryItem>{
     const result = await this.docClient.query({
-        TableName: this.todosTable,
-        KeyConditionExpression: 'todoId = :todoId',
+        TableName: this.diaryTable,
+        KeyConditionExpression: 'diaryId = :diaryId',
         ExpressionAttributeValues:{
-            ':todoId': id
+            ':diaryId': id
         }
     }).promise()
 
     const item = result.Items[0];
-    return item as TodoItem;
+    return item as DiaryItem;
 }
 
-async deleteTodo(todoId: string, userId: string): Promise<void> {
+async deleteDiary(diaryId: string, userId: string): Promise<void> {
     this.docClient
         .delete({
-            TableName: this.todosTable,
+            TableName: this.diaryTable,
             Key: {
-                todoId,
+                diaryId,
                 userId
             },
         })
         .promise();
 }
 
-async updateTodo(todoId:string, userId: string, updatedTodo:UpdateTodoRequest){
+async updateDiary(diaryId:string, userId: string, updatedDiary:UpdateDiaryRequest){
     await this.docClient.update({
-        TableName: this.todosTable,
+        TableName: this.diaryTable,
         Key:{
-            'todoId':todoId,
+            'diaryId':diaryId,
             'userId':userId
         },
-        UpdateExpression: 'set #namefield = :n, dueDate = :d, done = :done',
+        UpdateExpression: 'set #namefield = :n, dueDate = :d',
         ExpressionAttributeValues: {
-            ':n' : updatedTodo.name,
-            ':d' : updatedTodo.dueDate,
-            ':done' : updatedTodo.done
+            ':n' : updatedDiary.name,
+            ':d' : updatedDiary.dueDate
         },
         ExpressionAttributeNames:{
             "#namefield": "name"
@@ -80,15 +79,15 @@ async updateTodo(todoId:string, userId: string, updatedTodo:UpdateTodoRequest){
 }
 
 public async setAttachmentUrl(
-    todoId: string,
+    diaryId: string,
     userId: string,
     attachmentUrl: string,
 ): Promise<void> {
     this.docClient
         .update({
-            TableName: this.todosTable,
+            TableName: this.diaryTable,
             Key: {
-                todoId,
+                diaryId: diaryId,
                 userId
             },
             UpdateExpression: 'set attachmentUrl = :attachmentUrl',

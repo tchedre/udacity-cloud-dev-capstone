@@ -14,106 +14,105 @@ import {
   Loader
 } from 'semantic-ui-react'
 
-import { createTodo, deleteTodo, getTodos, patchTodo } from '../api/todos-api'
+import { createDiary, deleteDiary, getDiaries, patchDiary } from '../api/diaries-api'
 import Auth from '../auth/Auth'
-import { Todo } from '../types/Todo'
+import { Diary } from '../types/Diary'
 
-interface TodosProps {
+interface DiariesProps {
   auth: Auth
   history: History
 }
 
-interface TodosState {
-  todos: Todo[]
-  newTodoName: string
-  loadingTodos: boolean
+interface DiariesState {
+  diaries: Diary[]
+  newDiaryName: string
+  loadingDiaries: boolean
 }
 
-export class Todos extends React.PureComponent<TodosProps, TodosState> {
-  state: TodosState = {
-    todos: [],
-    newTodoName: '',
-    loadingTodos: true
+export class Diaries extends React.PureComponent<DiariesProps, DiariesState> {
+  state: DiariesState = {
+    diaries: [],
+    newDiaryName: '',
+    loadingDiaries: true
   }
 
   handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ newTodoName: event.target.value })
+    this.setState({ newDiaryName: event.target.value })
   }
 
-  onEditButtonClick = (todoId: string) => {
-    this.props.history.push(`/todos/${todoId}/edit`)
+  onEditButtonClick = (diaryId: string) => {
+    this.props.history.push(`/diaries/${diaryId}/edit`)
   }
 
-  onTodoCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
+  onDiaryCreate = async (event: React.ChangeEvent<HTMLButtonElement>) => {
     try {
       const dueDate = this.calculateDueDate()
-      const newTodo = await createTodo(this.props.auth.getIdToken(), {
-        name: this.state.newTodoName,
+      const newDiary = await createDiary(this.props.auth.getIdToken(), {
+        name: this.state.newDiaryName,
         dueDate
       })
       this.setState({
-        todos: [...this.state.todos, newTodo],
-        newTodoName: ''
+        diaries: [...this.state.diaries, newDiary],
+        newDiaryName: ''
       })
     } catch {
-      alert('Todo creation failed')
+      alert('Diary creation failed')
     }
   }
 
-  onTodoDelete = async (todoId: string) => {
+  onDiaryDelete = async (diaryId: string) => {
     try {
-      await deleteTodo(this.props.auth.getIdToken(), todoId)
+      await deleteDiary(this.props.auth.getIdToken(), diaryId)
       this.setState({
-        todos: this.state.todos.filter(todo => todo.todoId != todoId)
+        diaries: this.state.diaries.filter(diary => diary.diaryId != diaryId)
       })
     } catch {
-      alert('Todo deletion failed')
+      alert('Diary deletion failed')
     }
   }
 
-  onTodoCheck = async (pos: number) => {
+  onDiaryCheck = async (pos: number) => {
     try {
-      const todo = this.state.todos[pos]
-      await patchTodo(this.props.auth.getIdToken(), todo.todoId, {
-        name: todo.name,
-        dueDate: todo.dueDate,
-        done: !todo.done
+      const diary = this.state.diaries[pos]
+      await patchDiary(this.props.auth.getIdToken(), diary.diaryId, {
+        name: diary.name,
+        dueDate: diary.dueDate
       })
       this.setState({
-        todos: update(this.state.todos, {
-          [pos]: { done: { $set: !todo.done } }
+        diaries: update(this.state.diaries, {
+          [pos]: {}
         })
       })
     } catch {
-      alert('Todo deletion failed')
+      alert('Diary deletion failed')
     }
   }
 
   async componentDidMount() {
     try {
-      const todos = await getTodos(this.props.auth.getIdToken())
+      const diaries = await getDiaries(this.props.auth.getIdToken())
       this.setState({
-        todos,
-        loadingTodos: false
+        diaries: diaries,
+        loadingDiaries: false
       })
     } catch (e) {
-      alert(`Failed to fetch todos: ${e.message}`)
+      alert(`Failed to fetch diaries: ${e.message}`)
     }
   }
 
   render() {
     return (
       <div>
-        <Header as="h1">TODOs</Header>
+        <Header as="h1">Diaries</Header>
 
-        {this.renderCreateTodoInput()}
+        {this.renderCreateDiaryInput()}
 
-        {this.renderTodos()}
+        {this.renderDiaries()}
       </div>
     )
   }
 
-  renderCreateTodoInput() {
+  renderCreateDiaryInput() {
     return (
       <Grid.Row>
         <Grid.Column width={16}>
@@ -122,12 +121,12 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
               color: 'teal',
               labelPosition: 'left',
               icon: 'add',
-              content: 'New task',
-              onClick: this.onTodoCreate
+              content: 'New diary',
+              onClick: this.onDiaryCreate
             }}
             fluid
             actionPosition="left"
-            placeholder="To change the world..."
+            placeholder="Dear Diary ..."
             onChange={this.handleNameChange}
           />
         </Grid.Column>
@@ -138,47 +137,41 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
     )
   }
 
-  renderTodos() {
-    if (this.state.loadingTodos) {
+  renderDiaries() {
+    if (this.state.loadingDiaries) {
       return this.renderLoading()
     }
 
-    return this.renderTodosList()
+    return this.renderDiariesList()
   }
 
   renderLoading() {
     return (
       <Grid.Row>
         <Loader indeterminate active inline="centered">
-          Loading TODOs
+          Loading Diaries
         </Loader>
       </Grid.Row>
     )
   }
 
-  renderTodosList() {
+  renderDiariesList() {
     return (
       <Grid padded>
-        {this.state.todos.map((todo, pos) => {
+        {this.state.diaries.map((diary, pos) => {
           return (
-            <Grid.Row key={todo.todoId}>
-              <Grid.Column width={1} verticalAlign="middle">
-                <Checkbox
-                  onChange={() => this.onTodoCheck(pos)}
-                  checked={todo.done}
-                />
-              </Grid.Column>
+            <Grid.Row key={diary.diaryId}>
               <Grid.Column width={10} verticalAlign="middle">
-                {todo.name}
+                {diary.name}
               </Grid.Column>
               <Grid.Column width={3} floated="right">
-                {todo.dueDate}
+                {diary.dueDate}
               </Grid.Column>
               <Grid.Column width={1} floated="right">
                 <Button
                   icon
                   color="blue"
-                  onClick={() => this.onEditButtonClick(todo.todoId)}
+                  onClick={() => this.onEditButtonClick(diary.diaryId)}
                 >
                   <Icon name="pencil" />
                 </Button>
@@ -187,13 +180,13 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
                 <Button
                   icon
                   color="red"
-                  onClick={() => this.onTodoDelete(todo.todoId)}
+                  onClick={() => this.onDiaryDelete(diary.diaryId)}
                 >
                   <Icon name="delete" />
                 </Button>
               </Grid.Column>
-              {todo.attachmentUrl && (
-                <Image src={todo.attachmentUrl} size="small" wrapped />
+              {diary.attachmentUrl && (
+                <Image src={diary.attachmentUrl} size="small" wrapped />
               )}
               <Grid.Column width={16}>
                 <Divider />

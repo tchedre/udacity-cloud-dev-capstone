@@ -4,12 +4,12 @@ import { cors } from 'middy/middlewares'
 import * as uuid from '../../../node_modules/uuid'
 import * as AWS from 'aws-sdk';
 import * as AWSXRay from 'aws-xray-sdk';
-import { setAttachmentUrl } from "../../Logic/todos";
+import { setAttachmentUrl } from "../../Logic/diary";
 import { parseUserId } from '../../auth/utils';
 import { createLogger } from '../../utils/logger';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 
-const logger = createLogger('uploadTodoUrl');
+const logger = createLogger('uploadDiaryUrl');
 
 const XAWS = AWSXRay.captureAWS(AWS);
 let options: AWS.S3.Types.ClientConfiguration = {
@@ -30,7 +30,7 @@ function getUploadUrl(imageId: string): string {
 
 export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 try {
-    const todoId = event.pathParameters.todoId
+    const diaryId = event.pathParameters.diaryId
   logger.info('Generate upload url', event);
   // TODO: Return a presigned URL to upload a file for a TODO item with the provided id
   const authorization = event.headers.Authorization;
@@ -39,9 +39,9 @@ try {
   const userId = parseUserId(jwtToken);
 
     const imageId = uuid.v4();
-    logger.info(`upload Todo ${todoId} url for user ${userId}`);
+    logger.info(`upload Diary ${diaryId} url for user ${userId}`);
     setAttachmentUrl(
-        todoId,
+        diaryId,
         userId,
         `https://${bucketName}.s3.amazonaws.com/${imageId}`
     );

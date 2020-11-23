@@ -1,5 +1,5 @@
 service:
-  name: serverless-todo-app
+  name: serverless-diary-app
 
 plugins:
   - serverless-webpack
@@ -30,9 +30,9 @@ provider:
     apiGateway: true
 
   environment:
-    TODO_TABLE: Todo-${self:provider.stage}
+    DIARY_TABLE: Diary-${self:provider.stage}
     INDEX_NAME: userId
-    IMAGES_S3_BUCKET: todos-attachments-bucket-${self:provider.stage}-2
+    IMAGES_S3_BUCKET: diaries-attachments-bucket-${self:provider.stage}-2
     SIGNED_URL_EXPIRATION: 300
 
   iamRoleStatements:
@@ -40,11 +40,11 @@ provider:
       Action:
         - dynamodb:Scan
         - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DIARY_TABLE}
     - Effect: Allow
       Action:
         - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}/index/${self:provider.environment.INDEX_NAME}
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DIARY_TABLE}/index/${self:provider.environment.INDEX_NAME}
     - Effect: "Allow"
       Action:
         - xray:PutTelemetryRecords
@@ -54,7 +54,7 @@ provider:
       Action:
         - dynamodb:DeleteItem
         - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DIARY_TABLE}
     - Effect: "Allow"
       Action:
         - xray:PutTelemetryRecords
@@ -64,7 +64,7 @@ provider:
       Action:
         - dynamodb:UpdateItem
         - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DIARY_TABLE}
     - Effect: "Allow"
       Action:
         - xray:PutTelemetryRecords
@@ -74,7 +74,7 @@ provider:
       Action:
         - dynamodb:UpdateItem
         - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DIARY_TABLE}
     - Effect: Allow
       Action:
         - s3:PutObject
@@ -88,7 +88,7 @@ provider:
       Action:
         - dynamodb:PutItem
         - dynamodb:Query
-      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODO_TABLE}
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DIARY_TABLE}
     - Effect: "Allow"
       Action:
         - xray:PutTelemetryRecords
@@ -104,15 +104,15 @@ custom:
     api:
       info:
         version: v1.0.0
-        title: ToDos API
-        description: Serverless application for ToDos
+        title: Diaries API
+        description: Serverless application for Diaries
     models:
-      - name: CreateTodoRequest
+      - name: CreateDiaryRequest
         contentType: application/json
-        schema: ${file(models/create-todo-request.json)}
-      - name: UpdateTodoRequest
+        schema: ${file(models/create-diary-request.json)}
+      - name: UpdateDiaryRequest
         contentType: application/json
-        schema: ${file(models/update-todo-request.json)}
+        schema: ${file(models/update-diary-request.json)}
 
 functions:
 
@@ -120,63 +120,63 @@ functions:
     handler: src/lambda/auth/auth0Authorizer.handler
 
   # TODO: Configure this function
-  GetTodos:
-    handler: src/lambda/http/getTodos.handler
+  GetDiaries:
+    handler: src/lambda/http/getDiaries.handler
     events:
       - http:
           method: get
-          path: todos
+          path: diaries
           cors: true
           authorizer: Auth
 
-  DeleteTodo:
-    handler: src/lambda/http/deleteTodo.handler
+  DeleteDiary:
+    handler: src/lambda/http/deleteDiary.handler
     events:
       - http:
           method: delete
-          path: todos/{todoId}
+          path: diaries/{diaryId}
           cors: true
           authorizer: Auth
 
-  UpdateTodo:
-    handler: src/lambda/http/updateTodo.handler
+  UpdateDiary:
+    handler: src/lambda/http/updateDiary.handler
     events:
       - http:
           method: patch
-          path: todos/{todoId}
+          path: diaries/{diaryId}
           cors: true
           authorizer: Auth
           reqValidatorName: RequestBodyValidator
           documentation:
-            summary: Update a todo
-            description: Update a todo
+            summary: Update a diary
+            description: Update a diary
             requestModels:
-              'application/json': UpdateTodoRequest
+              'application/json': UpdateDiaryRequest
 
   GenerateUploadUrl:
     handler: src/lambda/http/generateUploadUrl.handler
     events:
       - http:
           method: post
-          path: todos/{todoId}/attachment
+          path: diaries/{diaryId}/attachment
           cors: true
           authorizer: Auth
 
   # TODO: Configure this function
-  CreateTodo:
-    handler: src/lambda/http/createTodo.handler
+  CreateDiary:
+    handler: src/lambda/http/createDiary.handler
     events:
       - http:
           method: post
-          path: todos
+          path: diaries
           cors: true
           authorizer: Auth
           reqValidatorName: RequestBodyValidator
           documentation:
-            summary: Create a new Todo
-            description: Create a new Todo
+            summary: Create a new Diary
+            description: Create a new Diary
             requestModels:
-              'application/json': CreateTodoRequest
+              'application/json': CreateDiaryRequest
 
 resources:
   Resources:
@@ -201,34 +201,34 @@ resources:
         ValidateRequestBody: true
         ValidateRequestParameters: false
   
-    TodoDynamoDbTable:
+    DiaryDynamoDbTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: todoId
+          - AttributeName: diaryId
             AttributeType: S
           - AttributeName: userId
             AttributeType: S
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
-          - AttributeName: todoId
+          - AttributeName: diaryId
             KeyType: RANGE
         GlobalSecondaryIndexes:
           - IndexName: ${self:provider.environment.INDEX_NAME}
             KeySchema:
             - AttributeName: userId
               KeyType: HASH
-            - AttributeName: todoId
+            - AttributeName: diaryId
               KeyType: RANGE
             Projection:
               ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:provider.environment.TODO_TABLE}
+        TableName: ${self:provider.environment.DIARY_TABLE}
         StreamSpecification:
           StreamViewType: NEW_IMAGE
 
-    TodoBucket:
+    DiaryBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:provider.environment.IMAGES_S3_BUCKET}
@@ -258,4 +258,4 @@ resources:
               Principal: '*'
               Action: 's3:GetObject'
               Resource: 'arn:aws:s3:::${self:provider.environment.IMAGES_S3_BUCKET}/*'
-        Bucket: !Ref TodoBucket
+        Bucket: !Ref DiaryBucket
